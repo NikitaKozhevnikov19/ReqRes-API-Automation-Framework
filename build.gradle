@@ -40,7 +40,7 @@ allure {
 }
 
 
-task testRemoteRunner(type: Test) {
+task testUsersAndAuth(type: Test) {
     useJUnitPlatform {
         includeTags("users", "auth")
     }
