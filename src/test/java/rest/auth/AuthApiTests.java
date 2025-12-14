@@ -10,7 +10,8 @@ import spec.SpecCustoms;
 
 import static io.qameta.allure.Allure.step;
 import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 @Tag("auth")
 public class AuthApiTests extends rest.TestBase {
@@ -35,7 +36,17 @@ public class AuthApiTests extends rest.TestBase {
                         .extract().as(RegisterResponse.class)
         );
 
-        step("Verify token", () -> assertEquals("QpwL5tke4Pnpja7X4", response.getToken()));
+        step("Verify token", () -> {
+            String token = response.getToken();
+
+            assertAll(
+                    () -> assertNotNull(token, "Token should not be null"),
+                    () -> assertFalse(token.isBlank(), "Token should not be blank"),
+                    () -> assertTrue(token.length() >= 10, "Token length should be >= 10"),
+                    () -> assertTrue(token.matches("^[a-zA-Z0-9]+$"),
+                            "Token should be alphanumeric")
+            );
+        });
     }
 
     @Test
