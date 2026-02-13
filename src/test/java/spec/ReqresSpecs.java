@@ -9,17 +9,17 @@ import io.restassured.specification.ResponseSpecification;
 import static helpers.CustomApiListener.withCustomTemplates;
 import static io.restassured.http.ContentType.JSON;
 
-public class SpecCustoms {
+public class ReqresSpecs {
 
     public static RequestSpecification requestSpecification = new RequestSpecBuilder()
             .setContentType(JSON)
-            .addHeader("x-api-key", "reqres_0f50984334cd42ac8b996d73df03cff2")
+            .addHeader("x-api-key", "reqres_e55e36d5f2f54397a8690b2a6aa325da")
             .addFilter(withCustomTemplates())
             .log(LogDetail.ALL)
             .build();
 
 
-    public static ResponseSpecification responseSpecificationBuilder(int statusCode) {
+    public static ResponseSpecification responseSpec(int statusCode) {
         return new ResponseSpecBuilder()
                 .expectStatusCode(statusCode)
                 .log(LogDetail.ALL)
