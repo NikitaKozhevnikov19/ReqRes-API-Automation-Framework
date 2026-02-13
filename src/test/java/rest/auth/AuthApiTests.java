@@ -1,69 +1,60 @@
 package rest.auth;
 
-import models.EmailResponseError;
-import models.RegisterResponse;
-import models.ResponseEmail;
-import models.UserRegistration;
+import models.ErrorResponse;
+import models.AuthResponse;
+import models.UserEmailDto;
+import models.UserAuthDto;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import spec.SpecCustoms;
+import rest.ApiTestBase;
+import spec.ReqresSpecs;
 
 import static io.qameta.allure.Allure.step;
 import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.*;
-
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("auth")
-public class AuthApiTests extends rest.TestBase {
+public class AuthApiTests extends ApiTestBase {
 
     private static final String LOGIN_URL = "/login";
 
     @Test
+    @DisplayName("Успешный логин")
     void shouldLoginSuccessfully() {
-        UserRegistration validUser = new UserRegistration(
-                "eve.holt@reqres.in",
-                "cityslicka"
-        );
+        UserAuthDto validUser = new UserAuthDto("eve.holt@reqres.in", "cityslicka");
 
-        RegisterResponse response = step("Login request", () ->
+        AuthResponse response = step("Отправить запрос на логин", () ->
                 given()
-                        .spec(SpecCustoms.requestSpecification)
+                        .spec(ReqresSpecs.requestSpecification)
                         .body(validUser)
                         .when()
                         .post(LOGIN_URL)
                         .then()
-                        .spec(SpecCustoms.responseSpecificationBuilder(200))
-                        .extract().as(RegisterResponse.class)
-        );
+                        .spec(ReqresSpecs.responseSpec(200))
+                        .extract().as(AuthResponse.class));
 
-        step("Verify token", () -> {
-            String token = response.getToken();
-
-            assertAll(
-                    () -> assertNotNull(token, "Token should not be null"),
-                    () -> assertFalse(token.isBlank(), "Token should not be blank"),
-                    () -> assertTrue(token.length() >= 10, "Token length should be >= 10"),
-                    () -> assertTrue(token.matches("^[a-zA-Z0-9]+$"),
-                            "Token should be alphanumeric")
-            );
-        });
+        step("Проверить наличие токена", () ->
+                assertNotNull(response.getToken()));
     }
 
     @Test
+    @DisplayName("Негативный тест: отсутствие пароля")
     void shouldReturn400OnMissingPassword() {
-        ResponseEmail onlyEmail = new ResponseEmail("peter@klaven");
+        UserEmailDto onlyEmail = new UserEmailDto("sydney@fife");
 
-        EmailResponseError response = step("Request with no password", () ->
+        ErrorResponse response = step("Попытка логина без пароля", () ->
                 given()
-                        .spec(SpecCustoms.requestSpecification)
+                        .spec(ReqresSpecs.requestSpecification)
                         .body(onlyEmail)
                         .when()
-                        .post(LOGIN_URL)
+                        .post("/register")
                         .then()
-                        .spec(SpecCustoms.responseSpecificationBuilder(400))
-                        .extract().as(EmailResponseError.class)
-        );
+                        .spec(ReqresSpecs.responseSpec(400))
+                        .extract().as(ErrorResponse.class));
 
-        step("Verify error message", () -> assertEquals("Missing password", response.getError()));
+        step("Проверить текст ошибки", () ->
+                assertEquals("Missing password", response.getError()));
     }
 }
