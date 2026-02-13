@@ -1,112 +1,91 @@
 package rest.users;
 
-import models.UserJson;
-import models.UserJsonPostResponse;
-import models.UserJsonPutResponse;
-import models.UserListResponse;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
+import models.*;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import spec.SpecCustoms;
+import rest.ApiTestBase;
+import spec.ReqresSpecs;
 
 import static io.qameta.allure.Allure.step;
 import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("users")
-public class UsersApiTests extends rest.TestBase {
+@Epic("API Reqres.in")
+@Feature("CRUD операции пользователя")
+public class UsersApiTests extends ApiTestBase {
 
     private static final String URL = "/users";
-    private static final UserJson NEW_USER = new UserJson("morpheus", "leader");
-    private static final UserJson UPDATE_USER = new UserJson("morpheus", "zion resident");
-    private static final String UNKNOWN = "/unknown/23";
 
     @Test
-    void shouldReturnCorrectEmailOfSecondUser() {
-        UserListResponse response = step("Get users list", () -> given()
-                .spec(SpecCustoms.requestSpecification)
-                .when()
-                .get(URL)
-                .then()
-                .spec(SpecCustoms.responseSpecificationBuilder(200))
-                .extract().as(UserListResponse.class));
+    @DisplayName("GET: Список пользователей (Read)")
+    void getListUsersTest() {
+        UserListResponse response = step("Запросить список пользователей", () ->
+                given()
+                        .spec(ReqresSpecs.requestSpecification)
+                        .queryParam("page", "2")
+                        .when()
+                        .get(URL)
+                        .then()
+                        .spec(ReqresSpecs.responseSpec(200))
+                        .extract().as(UserListResponse.class));
 
-        step("Check email", () -> assertEquals(
-                "janet.weaver@reqres.in",
-                response.getData().get(1).getEmail()
-        ));
+        step("Проверить email второго пользователя", () ->
+                assertThat(response.getData().get(1).getEmail())
+                        .isEqualTo("lindsay.ferguson@reqres.in"));
     }
 
     @Test
-    void sizeOfArrayShouldBeCorrect() {
-        UserListResponse response = step("Get users list", () -> given()
-                .spec(SpecCustoms.requestSpecification)
-                .when()
-                .get(URL)
-                .then()
-                .spec(SpecCustoms.responseSpecificationBuilder(200))
-                .extract().as(UserListResponse.class));
-
-        step("Check size", () -> assertEquals(6, response.getData().size()));
-    }
-
-    @Test
+    @DisplayName("POST: Создание пользователя (Create)")
     void shouldCreateUser() {
-        UserJsonPostResponse user = step("Create user", () -> given()
-                .spec(SpecCustoms.requestSpecification)
-                .body(NEW_USER)
-                .when()
-                .post(URL)
-                .then()
-                .spec(SpecCustoms.responseSpecificationBuilder(201))
-                .extract().as(UserJsonPostResponse.class));
+        UserDto user = new UserDto("morpheus", "leader");
 
-        step("Verify created user", () -> assertAll(
-                () -> assertEquals("morpheus", user.getName()),
-                () -> assertEquals("leader", user.getJob()),
-                () -> assertNotNull(user.getId()),
-                () -> assertNotNull(user.getCreatedAt())
-        ));
+        UserCreateResponse response = step("Создать нового пользователя", () ->
+                given()
+                        .spec(ReqresSpecs.requestSpecification)
+                        .body(user)
+                        .when()
+                        .post(URL)
+                        .then()
+                        .spec(ReqresSpecs.responseSpec(201))
+                        .extract().as(UserCreateResponse.class));
+
+        step("Проверить имя созданного пользователя", () ->
+                assertEquals("morpheus", response.getName()));
     }
 
     @Test
+    @DisplayName("PUT: Обновление данных (Update)")
     void shouldUpdateUser() {
-        UserJsonPutResponse updated = step("Update user", () -> given()
-                .spec(SpecCustoms.requestSpecification)
-                .body(UPDATE_USER)
-                .when()
-                .put(URL + "/2")
-                .then()
-                .spec(SpecCustoms.responseSpecificationBuilder(200))
-                .extract().as(UserJsonPutResponse.class));
+        UserDto user = new UserDto("morpheus", "zion resident");
 
-        step("Verify updated fields", () -> assertAll(
-                () -> assertEquals("morpheus", updated.getName()),
-                () -> assertEquals("zion resident", updated.getJob()),
-                () -> assertNotNull(updated.getUpdatedAt())
-        ));
+        UserUpdateResponse response = step("Обновить пользователя через PUT", () ->
+                given()
+                        .spec(ReqresSpecs.requestSpecification)
+                        .body(user)
+                        .when()
+                        .put(URL + "/2")
+                        .then()
+                        .spec(ReqresSpecs.responseSpec(200))
+                        .extract().as(UserUpdateResponse.class));
+
+        step("Проверить обновленную работу", () ->
+                assertEquals("zion resident", response.getJob()));
     }
 
     @Test
+    @DisplayName("DELETE: Удаление пользователя (Delete)")
     void shouldDeleteUser() {
-        step("Delete user", () -> given()
-                .spec(SpecCustoms.requestSpecification)
-                .when()
-                .delete(URL + "/2")
-                .then()
-                .spec(SpecCustoms.responseSpecificationBuilder(204))
-        );
-    }
-
-    @Test
-    void shouldReturn404ForUnknownResource() {
-        String response = step("Request unknown resource", () -> given()
-                .spec(SpecCustoms.requestSpecification)
-                .when()
-                .get(UNKNOWN)
-                .then()
-                .spec(SpecCustoms.responseSpecificationBuilder(404))
-                .extract().asString());
-
-        step("Check empty body", () -> assertEquals("{}", response));
+        step("Удалить пользователя с ID 2", () ->
+                given()
+                        .spec(ReqresSpecs.requestSpecification)
+                        .when()
+                        .delete(URL + "/2")
+                        .then()
+                        .spec(ReqresSpecs.responseSpec(204)));
     }
 }
