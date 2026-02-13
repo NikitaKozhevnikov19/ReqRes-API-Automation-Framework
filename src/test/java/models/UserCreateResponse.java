@@ -1,12 +1,14 @@
 package models;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserJsonPostResponse {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class UserCreateResponse {
     private String id;
     private String name;
     private String job;
