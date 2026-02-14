@@ -62,6 +62,12 @@ tasks.withType(Test).configureEach {
 
 task apiTest(type: Test) {
     useJUnitPlatform {
-        includeTags("users", "auth")
+        def tag = System.getProperty("groups")
+
+        if (tag != null && !tag.isEmpty() && tag != "all") {
+            includeTags tag
+        } else {
+            includeTags "users", "auth"
+        }
     }
 }
